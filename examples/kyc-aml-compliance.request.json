@@ -1,0 +1,8 @@
+{
+  "message": "High risk country merchant onboarding review with PEP indicator and possible sanctions match.",
+  "paymentId": "acct_review_001",
+  "amount": 5000.00,
+  "currency": "USD",
+  "merchantId": "mrc_cross_border",
+  "customerId": "cust_blocked_review"
+}

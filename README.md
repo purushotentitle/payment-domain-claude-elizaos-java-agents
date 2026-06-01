@@ -24,6 +24,8 @@ Requirements:
 - Optional: `ANTHROPIC_API_KEY`
 - Optional: Maven, if you prefer Maven builds
 
+For step-by-step IntelliJ debug testing with sample payloads for every agent, see [INTELLIJ_DEBUG_TESTING.md](INTELLIJ_DEBUG_TESTING.md).
+
 ### 1. Open the project folder
 
 ```powershell

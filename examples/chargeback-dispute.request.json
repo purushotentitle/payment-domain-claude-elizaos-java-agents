@@ -1,0 +1,8 @@
+{
+  "message": "Customer filed fraud chargeback, but order was delivered and support contacted the customer before dispute.",
+  "paymentId": "chb_001",
+  "amount": 319.99,
+  "currency": "USD",
+  "merchantId": "mrc_retail",
+  "customerId": "cust_dispute"
+}

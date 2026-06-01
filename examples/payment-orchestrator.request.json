@@ -1,0 +1,8 @@
+{
+  "message": "Gateway outage on primary processor. Evaluate whether this authorization should use backup routing with 3DS.",
+  "paymentId": "pay_orch_001",
+  "amount": 1299.00,
+  "currency": "USD",
+  "merchantId": "mrc_high_value",
+  "customerId": "cust_repeat_buyer"
+}
