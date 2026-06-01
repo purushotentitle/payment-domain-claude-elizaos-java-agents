@@ -1,0 +1,8 @@
+{
+  "message": "Evaluate this card payment before capture. New device, AVS fail, high value order.",
+  "paymentId": "pay_123",
+  "amount": 2499.00,
+  "currency": "USD",
+  "merchantId": "mrc_high_value",
+  "customerId": "cust_new_device"
+}

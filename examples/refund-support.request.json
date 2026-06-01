@@ -1,0 +1,8 @@
+{
+  "message": "Customer asks for a refund. Order is not final sale and support has the transcript.",
+  "paymentId": "pay_ref_001",
+  "amount": 549.00,
+  "currency": "USD",
+  "merchantId": "mrc_retail",
+  "customerId": "cust_refund"
+}

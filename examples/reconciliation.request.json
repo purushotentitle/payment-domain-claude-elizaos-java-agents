@@ -1,0 +1,8 @@
+{
+  "message": "Gateway settlement file shows a mismatch and delayed payout for this batch.",
+  "paymentId": "pay_789",
+  "amount": 118.30,
+  "currency": "USD",
+  "merchantId": "mrc_standard",
+  "customerId": "cust_451"
+}

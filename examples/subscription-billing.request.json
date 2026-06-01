@@ -1,0 +1,8 @@
+{
+  "message": "Failed renewal, past due invoice, third retry already attempted.",
+  "paymentId": "inv_456",
+  "amount": 79.00,
+  "currency": "USD",
+  "merchantId": "mrc_enterprise_saas",
+  "customerId": "cust_900"
+}
