@@ -35,7 +35,7 @@ public class ApprovalController {
 
     @GetMapping("/{approvalId}")
     @Operation(summary = "Get approval case by ID")
-    public ApprovalCase getApproval(@PathVariable String approvalId) {
+    public ApprovalCase getApproval(@PathVariable("approvalId") String approvalId) {
         return approvalService.find(approvalId).orElseThrow(() -> new ApprovalNotFoundException(approvalId));
     }
 
@@ -48,7 +48,7 @@ public class ApprovalController {
     @PostMapping("/{approvalId}/approve")
     @Operation(summary = "Approve a pending action")
     public ApprovalCase approve(
-            @PathVariable String approvalId,
+            @PathVariable("approvalId") String approvalId,
             @Valid @RequestBody ApprovalDecisionRequest request
     ) {
         return approvalService.approve(approvalId, request);
@@ -57,7 +57,7 @@ public class ApprovalController {
     @PostMapping("/{approvalId}/reject")
     @Operation(summary = "Reject a pending action")
     public ApprovalCase reject(
-            @PathVariable String approvalId,
+            @PathVariable("approvalId") String approvalId,
             @Valid @RequestBody ApprovalDecisionRequest request
     ) {
         return approvalService.reject(approvalId, request);

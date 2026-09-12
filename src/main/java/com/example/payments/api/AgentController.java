@@ -35,7 +35,7 @@ public class AgentController {
     @PostMapping("/{agentId}/invoke")
     @Operation(summary = "Invoke a payment agent")
     public AgentResponse invokeAgent(
-            @PathVariable String agentId,
+            @PathVariable("agentId") String agentId,
             @Valid @RequestBody AgentRequest request
     ) {
         return agentService.invoke(agentId, request);

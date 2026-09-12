@@ -1,4 +1,4 @@
-# Payment Domain Claude + ElizaOS Java Agents
+# Payment Domain Claude + Temporal Java Agents
 
 Spring Boot Java backend examples for agentic AI workflows in the payment domain. The service exposes multiple payment agents over REST APIs, calls Claude through Anthropic's Messages API when `ANTHROPIC_API_KEY` is available, and falls back to deterministic local recommendations for development.
 
@@ -14,7 +14,11 @@ Spring Boot Java backend examples for agentic AI workflows in the payment domain
 
 ## Why this structure
 
-The core runtime is Java/Spring Boot, while the `elizaos/characters` folder stores ElizaOS-style character definitions so each Java agent can be represented in an ElizaOS orchestration layer. The `elizaos/actions` folder includes an example action that calls the Java backend.
+The core runtime is Java/Spring Boot. Temporal is the recommended orchestration layer because payment workflows need durable state, retries, timeouts, long-running human approvals, and auditable workflow history.
+
+ElizaOS files remain in `elizaos/` as optional conversational-agent examples, but they are no longer the preferred orchestration strategy for production payment flows.
+
+For the Temporal workflow design, see [orchestration/TEMPORAL_ORCHESTRATION.md](orchestration/TEMPORAL_ORCHESTRATION.md).
 
 ## Run the application locally
 
@@ -24,6 +28,7 @@ Requirements:
 - Maven 3.9+
 - Optional: `ANTHROPIC_API_KEY`, for Claude reasoning
 - Optional: `PAYMENT_AGENT_API_KEY`, for local API-key protection
+- Optional: Temporal service, if you want durable workflow orchestration
 
 For step-by-step IntelliJ debug testing with sample payloads for every agent, see [INTELLIJ_DEBUG_TESTING.md](INTELLIJ_DEBUG_TESTING.md).
 
@@ -67,7 +72,7 @@ Or build and run the jar:
 
 ```powershell
 mvn package
-java -jar target/payment-domain-claude-elizaos-java-agents-1.0.0.jar
+java -jar target/payment-domain-claude-temporal-java-agents-1.0.0.jar
 ```
 
 The server starts on:
@@ -112,6 +117,19 @@ Swagger UI is available at:
 
 ```text
 http://localhost:8080/swagger-ui.html
+```
+
+Temporal workflow start endpoint:
+
+```text
+POST http://localhost:8080/orchestrations/payment-review/{agentId}
+```
+
+By default this returns `501 NOT_IMPLEMENTED` because Temporal is disabled for local simplicity. Enable it with:
+
+```powershell
+$env:TEMPORAL_CLIENT_ENABLED="true"
+$env:TEMPORAL_WORKER_ENABLED="true"
 ```
 
 ### 6. Invoke a payment agent
@@ -200,6 +218,14 @@ List audit events:
 curl http://localhost:8080/audit
 ```
 
+Start a Temporal payment-review workflow:
+
+```bash
+curl -X POST http://localhost:8080/orchestrations/payment-review/fraud-risk \
+  -H "Content-Type: application/json" \
+  -d @examples/fraud-risk.request.json
+```
+
 Invoke an agent:
 
 ```bash
@@ -234,10 +260,11 @@ src/main/java/com/example/payments
   audit/                            In-memory audit log
   config/                           Spring configuration
   domain/                           Shared request/response models
+  orchestration/                    Temporal workflow, activity, worker, and launcher code
   security/                         API key guard and sensitive-data redaction
   tools/                            Payment toolbox facade over adapters
-elizaos/characters/                 Character definitions for ElizaOS
-elizaos/actions/                    Example ElizaOS action calling the Java backend
+orchestration/                      Temporal design documentation
+elizaos/                            Optional legacy conversational-agent examples
 examples/                           Example requests
 ```
 

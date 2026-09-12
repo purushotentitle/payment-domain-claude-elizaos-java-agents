@@ -35,6 +35,8 @@ PORT=8080
 ANTHROPIC_API_KEY=your_key_here
 CLAUDE_MODEL=claude-sonnet-4-20250514
 PAYMENT_AGENT_API_KEY=local-dev-key
+TEMPORAL_CLIENT_ENABLED=false
+TEMPORAL_WORKER_ENABLED=false
 ```
 
 If you do not set `ANTHROPIC_API_KEY`, the app still works in local fallback mode. If you set `PAYMENT_AGENT_API_KEY`, add an `X-API-Key` header to protected API requests.
@@ -69,6 +71,12 @@ src/main/java/com/example/payments/approvals/ApprovalService.java
 
 src/main/java/com/example/payments/security/ApiKeyInterceptor.java
 - preHandle(...)
+
+src/main/java/com/example/payments/orchestration/PaymentReviewWorkflowImpl.java
+- reviewPayment(...)
+
+src/main/java/com/example/payments/orchestration/SpringPaymentAgentActivities.java
+- invokeAgent(...)
 ```
 
 Then set one breakpoint inside the agent you want to test, inside its `handle(...)` method.
@@ -300,6 +308,23 @@ Inspect audit events:
 
 ```powershell
 Invoke-RestMethod -Uri http://localhost:8080/audit -Method Get
+```
+
+To debug Temporal orchestration, run a local Temporal service first, set these environment variables, and restart debug mode:
+
+```text
+TEMPORAL_CLIENT_ENABLED=true
+TEMPORAL_WORKER_ENABLED=true
+TEMPORAL_TARGET=127.0.0.1:7233
+TEMPORAL_NAMESPACE=default
+TEMPORAL_TASK_QUEUE=payment-agent-task-queue
+```
+
+Then call:
+
+```powershell
+$body = Get-Content examples/fraud-risk.request.json -Raw
+Invoke-RestMethod -Uri http://localhost:8080/orchestrations/payment-review/fraud-risk -Method Post -ContentType "application/json" -Body $body
 ```
 
 The most important concept:

@@ -11,13 +11,14 @@
     </parent>
 
     <groupId>com.example</groupId>
-    <artifactId>payment-domain-claude-elizaos-java-agents</artifactId>
+    <artifactId>payment-domain-claude-temporal-java-agents</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
     <properties>
         <java.version>17</java.version>
         <springdoc.version>2.8.9</springdoc.version>
+        <temporal.version>1.31.0</temporal.version>
     </properties>
 
     <dependencies>
@@ -37,6 +38,11 @@
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
             <version>${springdoc.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.temporal</groupId>
+            <artifactId>temporal-sdk</artifactId>
+            <version>${temporal.version}</version>
         </dependency>
 
         <dependency>

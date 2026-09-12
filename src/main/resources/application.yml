@@ -8,6 +8,15 @@ anthropic:
 payments:
   api-key: ${PAYMENT_AGENT_API_KEY:}
 
+temporal:
+  target: ${TEMPORAL_TARGET:127.0.0.1:7233}
+  namespace: ${TEMPORAL_NAMESPACE:default}
+  task-queue: ${TEMPORAL_TASK_QUEUE:payment-agent-task-queue}
+  worker:
+    enabled: ${TEMPORAL_WORKER_ENABLED:false}
+  client:
+    enabled: ${TEMPORAL_CLIENT_ENABLED:false}
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
