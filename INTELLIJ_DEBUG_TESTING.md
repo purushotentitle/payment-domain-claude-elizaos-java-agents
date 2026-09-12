@@ -1,6 +1,6 @@
 # IntelliJ Debug Testing Guide
 
-Use this guide to run the Java backend in IntelliJ debug mode and test every payment agent with sample values.
+Use this guide to run the Spring Boot Java backend in IntelliJ debug mode and test every payment agent with sample values.
 
 ## 1. Open the project in IntelliJ
 
@@ -34,9 +34,10 @@ JDK: Java 17+
 PORT=8080
 ANTHROPIC_API_KEY=your_key_here
 CLAUDE_MODEL=claude-sonnet-4-20250514
+PAYMENT_AGENT_API_KEY=local-dev-key
 ```
 
-If you do not set `ANTHROPIC_API_KEY`, the app still works in local fallback mode.
+If you do not set `ANTHROPIC_API_KEY`, the app still works in local fallback mode. If you set `PAYMENT_AGENT_API_KEY`, add an `X-API-Key` header to protected API requests.
 
 ## 3. Add useful breakpoints
 
@@ -45,17 +46,29 @@ Start with these breakpoints:
 ```text
 src/main/java/com/example/payments/Main.java
 - main(...)
-- createClaudeClient()
 
-src/main/java/com/example/payments/api/AgentHttpServer.java
-- handleAgents(...)
-- toAgentRequest(...)
+src/main/java/com/example/payments/api/AgentController.java
+- listAgents(...)
+- invokeAgent(...)
+
+src/main/java/com/example/payments/agents/AgentService.java
+- listAgents(...)
+- invoke(...)
 
 src/main/java/com/example/payments/agents/BasePaymentAgent.java
 - askClaude(...)
 
 src/main/java/com/example/payments/tools/PaymentToolbox.java
 - the method used by the agent you are testing
+
+src/main/java/com/example/payments/approvals/ApprovalService.java
+- createRequiredApprovals(...)
+- create(...)
+- approve(...)
+- reject(...)
+
+src/main/java/com/example/payments/security/ApiKeyInterceptor.java
+- preHandle(...)
 ```
 
 Then set one breakpoint inside the agent you want to test, inside its `handle(...)` method.
@@ -67,13 +80,20 @@ Click the bug icon in IntelliJ to start the application in debug mode.
 Expected console output:
 
 ```text
-Payment agent backend running at http://localhost:8080
+Tomcat started on port 8080
+Started Main
 ```
 
 Open this URL to confirm the server is running:
 
 ```text
 http://localhost:8080/agents
+```
+
+Swagger UI:
+
+```text
+http://localhost:8080/swagger-ui.html
 ```
 
 Do not open `/agents/{agentId}/invoke` directly in the browser. That URL requires a POST request with JSON.
@@ -100,6 +120,12 @@ Command:
 ```powershell
 $body = Get-Content examples/payment-orchestrator.request.json -Raw
 Invoke-RestMethod -Uri http://localhost:8080/agents/payment-orchestrator/invoke -Method Post -ContentType "application/json" -Body $body
+```
+
+If you enabled `PAYMENT_AGENT_API_KEY`, add:
+
+```powershell
+-Headers @{ "X-API-Key" = "local-dev-key" }
 ```
 
 Expected behavior:
@@ -254,6 +280,26 @@ evidence
 reasoning
 actions
 requiresApproval
+approvalId
+```
+
+After invoking an agent, inspect pending approvals:
+
+```powershell
+Invoke-RestMethod -Uri http://localhost:8080/approvals -Method Get
+```
+
+Approve one case:
+
+```powershell
+$decision = '{"reviewer":"ops_lead","notes":"Approved after debug review."}'
+Invoke-RestMethod -Uri http://localhost:8080/approvals/apr_1/approve -Method Post -ContentType "application/json" -Body $decision
+```
+
+Inspect audit events:
+
+```powershell
+Invoke-RestMethod -Uri http://localhost:8080/audit -Method Get
 ```
 
 The most important concept:

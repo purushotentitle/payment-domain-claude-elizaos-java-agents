@@ -1,6 +1,6 @@
 # Payment Domain Claude + ElizaOS Java Agents
 
-Java backend examples for agentic AI workflows in the payment domain. The service exposes multiple payment agents over HTTP, calls Claude through Anthropic's Messages API when `ANTHROPIC_API_KEY` is available, and falls back to deterministic local recommendations for development.
+Spring Boot Java backend examples for agentic AI workflows in the payment domain. The service exposes multiple payment agents over REST APIs, calls Claude through Anthropic's Messages API when `ANTHROPIC_API_KEY` is available, and falls back to deterministic local recommendations for development.
 
 ## Agents included
 
@@ -14,15 +14,16 @@ Java backend examples for agentic AI workflows in the payment domain. The servic
 
 ## Why this structure
 
-The core runtime is Java, while the `elizaos/characters` folder stores ElizaOS-style character definitions so each Java agent can be represented in an ElizaOS orchestration layer. In a production deployment, ElizaOS can call this Java service through HTTP actions or a custom plugin.
+The core runtime is Java/Spring Boot, while the `elizaos/characters` folder stores ElizaOS-style character definitions so each Java agent can be represented in an ElizaOS orchestration layer. The `elizaos/actions` folder includes an example action that calls the Java backend.
 
 ## Run the application locally
 
 Requirements:
 
 - Java 17+
-- Optional: `ANTHROPIC_API_KEY`
-- Optional: Maven, if you prefer Maven builds
+- Maven 3.9+
+- Optional: `ANTHROPIC_API_KEY`, for Claude reasoning
+- Optional: `PAYMENT_AGENT_API_KEY`, for local API-key protection
 
 For step-by-step IntelliJ debug testing with sample payloads for every agent, see [INTELLIJ_DEBUG_TESTING.md](INTELLIJ_DEBUG_TESTING.md).
 
@@ -32,18 +33,12 @@ For step-by-step IntelliJ debug testing with sample payloads for every agent, se
 cd C:\Users\Admin\Documents\Codex\2026-06-01\claude-anthropics-elizaos-agentic-ai-provide\outputs\payment-domain-claude-elizaos-java-agents
 ```
 
-### 2. Compile the Java code
+### 2. Build and test
 
-This project has no required external runtime dependencies, so you can compile it directly with the JDK:
-
-```powershell
-javac -d build/classes (Get-ChildItem -Recurse src/main/java/*.java).FullName
-```
-
-If you use Maven, this also works:
+Run the full test suite:
 
 ```powershell
-mvn package
+mvn test
 ```
 
 ### 3. Optional: enable Claude reasoning
@@ -62,15 +57,16 @@ $env:CLAUDE_MODEL="claude-sonnet-4-20250514"
 
 ### 4. Start the backend
 
-Direct JDK run:
+Use Spring Boot:
 
 ```powershell
-java -cp build/classes com.example.payments.Main
+mvn spring-boot:run
 ```
 
-If you built with Maven:
+Or build and run the jar:
 
 ```powershell
+mvn package
 java -jar target/payment-domain-claude-elizaos-java-agents-1.0.0.jar
 ```
 
@@ -84,7 +80,14 @@ To use another port:
 
 ```powershell
 $env:PORT="9090"
-java -cp build/classes com.example.payments.Main
+mvn spring-boot:run
+```
+
+To protect the agent, approval, and audit APIs with a local API key:
+
+```powershell
+$env:PAYMENT_AGENT_API_KEY="local-dev-key"
+mvn spring-boot:run
 ```
 
 ### 5. Check that the app is running
@@ -99,10 +102,17 @@ Or test from PowerShell:
 
 ```powershell
 Invoke-RestMethod -Uri http://localhost:8080/health -Method Get
+Invoke-RestMethod -Uri http://localhost:8080/actuator/health -Method Get
 Invoke-RestMethod -Uri http://localhost:8080/agents -Method Get
 ```
 
 Important: URLs like `/agents/fraud-risk/invoke` are POST API endpoints. They are not normal browser pages. Use PowerShell, curl, Postman, ElizaOS, or another HTTP client to call them.
+
+Swagger UI is available at:
+
+```text
+http://localhost:8080/swagger-ui.html
+```
 
 ### 6. Invoke a payment agent
 
@@ -115,6 +125,17 @@ Invoke-RestMethod `
   -Uri http://localhost:8080/agents/fraud-risk/invoke `
   -Method Post `
   -ContentType "application/json" `
+  -Body $body
+```
+
+If `PAYMENT_AGENT_API_KEY` is set:
+
+```powershell
+Invoke-RestMethod `
+  -Uri http://localhost:8080/agents/fraud-risk/invoke `
+  -Method Post `
+  -ContentType "application/json" `
+  -Headers @{ "X-API-Key" = "local-dev-key" } `
   -Body $body
 ```
 
@@ -147,10 +168,36 @@ Stop-Process -Id <process_id>
 
 ## API
 
+Swagger UI:
+
+```text
+http://localhost:8080/swagger-ui.html
+```
+
 List agents:
 
 ```bash
 curl http://localhost:8080/agents
+```
+
+List approval cases:
+
+```bash
+curl http://localhost:8080/approvals
+```
+
+Approve a pending case:
+
+```bash
+curl -X POST http://localhost:8080/approvals/apr_1/approve \
+  -H "Content-Type: application/json" \
+  -d '{"reviewer":"ops_lead","notes":"Approved after review"}'
+```
+
+List audit events:
+
+```bash
+curl http://localhost:8080/audit
 ```
 
 Invoke an agent:
@@ -170,26 +217,35 @@ curl -X POST http://localhost:8080/agents/fraud-risk/invoke \
 
 ## Safety model
 
-These examples do not move real money. Any action that would capture, refund, block, offboard, or file representment is returned as an `ActionProposal` with `requiresApproval=true`. Use this pattern when connecting agents to real payment gateways.
+These examples do not move real money. Any action that would capture, refund, block, offboard, post an accounting adjustment, or file representment is returned as an `ActionProposal` with `requiresApproval=true`.
+
+When an agent returns an approval-gated action, the Spring service creates a pending `ApprovalCase` and attaches its `approvalId` to the action. Reviewers can approve or reject these cases through `/approvals/{approvalId}/approve` and `/approvals/{approvalId}/reject`.
 
 ## Repository layout
 
 ```text
 src/main/java/com/example/payments
-  Main.java                         HTTP bootstrap
+  Main.java                         Spring Boot bootstrap
   agents/                           Payment-domain agents
+  adapters/                         Mock gateway, ledger, risk, KYC, dispute, billing, and refund adapters
   anthropic/                        Claude client
-  api/                              HTTP request handling
+  api/                              Spring REST controllers and exception handling
+  approvals/                        Approval workflow
+  audit/                            In-memory audit log
+  config/                           Spring configuration
   domain/                           Shared request/response models
-  tools/                            Mock payment tools and data providers
+  security/                         API key guard and sensitive-data redaction
+  tools/                            Payment toolbox facade over adapters
 elizaos/characters/                 Character definitions for ElizaOS
+elizaos/actions/                    Example ElizaOS action calling the Java backend
 examples/                           Example requests
 ```
 
 ## Production notes
 
-- Replace `PaymentToolbox` mocks with gateway, ledger, CRM, KYC, and dispute-provider adapters.
+- Replace mock adapters with gateway, ledger, CRM, KYC, and dispute-provider integrations.
 - Store conversation and decision audit trails with immutable IDs.
 - Put hard policy checks before model calls for PCI, AML, sanctions, SCA, and refund rules.
-- Add human approval queues for high-risk and money-moving proposals.
+- Persist approval cases in a database and integrate with a reviewer queue.
 - Redact PAN, CVV, auth credentials, and sensitive PII before any model request.
+- Add OAuth/JWT or service-to-service authentication before exposing outside local development.

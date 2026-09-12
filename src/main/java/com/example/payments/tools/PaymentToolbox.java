@@ -1,77 +1,70 @@
 package com.example.payments.tools;
 
+import com.example.payments.adapters.ComplianceScreeningAdapter;
+import com.example.payments.adapters.DisputeProviderAdapter;
+import com.example.payments.adapters.FraudProviderAdapter;
+import com.example.payments.adapters.PaymentGatewayAdapter;
+import com.example.payments.adapters.RefundPolicyAdapter;
+import com.example.payments.adapters.SettlementLedgerAdapter;
+import com.example.payments.adapters.SubscriptionBillingAdapter;
 import com.example.payments.domain.AgentRequest;
+import org.springframework.stereotype.Component;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
 
+@Component
 public final class PaymentToolbox {
+    private final FraudProviderAdapter fraudProviderAdapter;
+    private final PaymentGatewayAdapter paymentGatewayAdapter;
+    private final SettlementLedgerAdapter settlementLedgerAdapter;
+    private final DisputeProviderAdapter disputeProviderAdapter;
+    private final SubscriptionBillingAdapter subscriptionBillingAdapter;
+    private final ComplianceScreeningAdapter complianceScreeningAdapter;
+    private final RefundPolicyAdapter refundPolicyAdapter;
+
+    public PaymentToolbox(
+            FraudProviderAdapter fraudProviderAdapter,
+            PaymentGatewayAdapter paymentGatewayAdapter,
+            SettlementLedgerAdapter settlementLedgerAdapter,
+            DisputeProviderAdapter disputeProviderAdapter,
+            SubscriptionBillingAdapter subscriptionBillingAdapter,
+            ComplianceScreeningAdapter complianceScreeningAdapter,
+            RefundPolicyAdapter refundPolicyAdapter
+    ) {
+        this.fraudProviderAdapter = fraudProviderAdapter;
+        this.paymentGatewayAdapter = paymentGatewayAdapter;
+        this.settlementLedgerAdapter = settlementLedgerAdapter;
+        this.disputeProviderAdapter = disputeProviderAdapter;
+        this.subscriptionBillingAdapter = subscriptionBillingAdapter;
+        this.complianceScreeningAdapter = complianceScreeningAdapter;
+        this.refundPolicyAdapter = refundPolicyAdapter;
+    }
+
     public Map<String, Object> riskSignals(AgentRequest request) {
-        Map<String, Object> signals = new LinkedHashMap<>();
-        double amount = request.amount() == null ? 0.0 : request.amount().doubleValue();
-        signals.put("amountRisk", amount >= 1000.0 ? "high" : amount >= 250.0 ? "medium" : "low");
-        signals.put("newDevice", contains(request.customerId(), "new") || contains(request.message(), "new device"));
-        signals.put("velocity", contains(request.merchantId(), "high") ? "elevated" : "normal");
-        signals.put("avsResult", contains(request.message(), "avs fail") ? "fail" : "pass");
-        signals.put("threeDsAvailable", !contains(request.message(), "moto"));
-        return signals;
+        return fraudProviderAdapter.riskSignals(request);
     }
 
     public Map<String, Object> gatewayHealth(AgentRequest request) {
-        Map<String, Object> health = new LinkedHashMap<>();
-        health.put("primaryGateway", contains(request.message(), "gateway outage") ? "degraded" : "healthy");
-        health.put("backupGateway", "healthy");
-        health.put("retryWindowSeconds", 90);
-        health.put("idempotencyKeyRequired", true);
-        return health;
+        return paymentGatewayAdapter.gatewayHealth(request);
     }
 
     public Map<String, Object> settlementBreaks(AgentRequest request) {
-        Map<String, Object> breaks = new LinkedHashMap<>();
-        breaks.put("ledgerMatch", !contains(request.message(), "mismatch"));
-        breaks.put("gatewayBatchStatus", contains(request.message(), "delayed") ? "delayed" : "closed");
-        breaks.put("unmatchedCount", contains(request.message(), "mismatch") ? 3 : 0);
-        breaks.put("nextCutoff", "T+1 18:00");
-        return breaks;
+        return settlementLedgerAdapter.settlementBreaks(request);
     }
 
     public Map<String, Object> disputeFacts(AgentRequest request) {
-        Map<String, Object> facts = new LinkedHashMap<>();
-        facts.put("reasonCode", contains(request.message(), "fraud") ? "10.4 other fraud" : "13.1 merchandise not received");
-        facts.put("deliveryProofAvailable", contains(request.message(), "delivered"));
-        facts.put("customerContacted", contains(request.message(), "contacted"));
-        facts.put("representmentDeadlineDays", 9);
-        return facts;
+        return disputeProviderAdapter.disputeFacts(request);
     }
 
     public Map<String, Object> subscriptionState(AgentRequest request) {
-        Map<String, Object> state = new LinkedHashMap<>();
-        state.put("invoicePastDue", contains(request.message(), "past due") || contains(request.message(), "failed renewal"));
-        state.put("retryCount", contains(request.message(), "third retry") ? 3 : 1);
-        state.put("accountTier", contains(request.merchantId(), "enterprise") ? "enterprise" : "standard");
-        state.put("dunningTemplate", "payment_method_refresh");
-        return state;
+        return subscriptionBillingAdapter.subscriptionState(request);
     }
 
     public Map<String, Object> complianceScreen(AgentRequest request) {
-        Map<String, Object> screen = new LinkedHashMap<>();
-        screen.put("sanctionsHit", contains(request.message(), "sanctions") || contains(request.customerId(), "blocked"));
-        screen.put("pepIndicator", contains(request.message(), "pep"));
-        screen.put("countryRisk", contains(request.message(), "high risk country") ? "high" : "standard");
-        screen.put("enhancedDueDiligenceRequired", contains(request.message(), "sanctions") || contains(request.message(), "pep"));
-        return screen;
+        return complianceScreeningAdapter.complianceScreen(request);
     }
 
     public Map<String, Object> refundPolicy(AgentRequest request) {
-        Map<String, Object> policy = new LinkedHashMap<>();
-        policy.put("eligible", !contains(request.message(), "final sale"));
-        policy.put("requiresManagerApproval", request.amount() != null && request.amount().doubleValue() >= 500.0);
-        policy.put("suggestedRail", "original_payment_method");
-        policy.put("slaHours", 24);
-        return policy;
-    }
-
-    private boolean contains(String source, String fragment) {
-        return source != null && source.toLowerCase().contains(fragment.toLowerCase());
+        return refundPolicyAdapter.refundPolicy(request);
     }
 }

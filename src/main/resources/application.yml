@@ -1,0 +1,19 @@
+server:
+  port: ${PORT:8080}
+
+anthropic:
+  api-key: ${ANTHROPIC_API_KEY:}
+  model: ${CLAUDE_MODEL:claude-sonnet-4-20250514}
+
+payments:
+  api-key: ${PAYMENT_AGENT_API_KEY:}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

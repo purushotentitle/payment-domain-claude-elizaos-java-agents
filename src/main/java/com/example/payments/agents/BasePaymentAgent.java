@@ -7,6 +7,7 @@ import java.util.Map;
 
 abstract class BasePaymentAgent implements PaymentAgent {
     protected String askClaude(AgentContext context, String systemPrompt, AgentRequest request, Map<String, Object> evidence) {
+        AgentRequest redactedRequest = context.redactor().redact(request);
         String userPrompt = """
                 Payment request:
                 message=%s
@@ -20,12 +21,12 @@ abstract class BasePaymentAgent implements PaymentAgent {
                 Return concise payment-operations reasoning. Do not claim that money was moved.
                 """
                 .formatted(
-                        nullToEmpty(request.message()),
-                        nullToEmpty(request.paymentId()),
-                        request.amount(),
-                        nullToEmpty(request.currency()),
-                        nullToEmpty(request.merchantId()),
-                        nullToEmpty(request.customerId()),
+                        nullToEmpty(redactedRequest.message()),
+                        nullToEmpty(redactedRequest.paymentId()),
+                        redactedRequest.amount(),
+                        nullToEmpty(redactedRequest.currency()),
+                        nullToEmpty(redactedRequest.merchantId()),
+                        nullToEmpty(redactedRequest.customerId()),
                         evidence
                 );
         try {

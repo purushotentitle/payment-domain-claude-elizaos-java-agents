@@ -1,7 +1,12 @@
 package com.example.payments.domain;
 
 import com.example.payments.anthropic.ClaudeClient;
+import com.example.payments.security.SensitiveDataRedactor;
 import com.example.payments.tools.PaymentToolbox;
 
-public record AgentContext(ClaudeClient claudeClient, PaymentToolbox paymentToolbox) {
+public record AgentContext(
+        ClaudeClient claudeClient,
+        PaymentToolbox paymentToolbox,
+        SensitiveDataRedactor redactor
+) {
 }

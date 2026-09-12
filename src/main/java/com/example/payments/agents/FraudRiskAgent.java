@@ -4,11 +4,13 @@ import com.example.payments.domain.ActionProposal;
 import com.example.payments.domain.AgentContext;
 import com.example.payments.domain.AgentRequest;
 import com.example.payments.domain.AgentResponse;
+import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+@Component
 public final class FraudRiskAgent extends BasePaymentAgent {
     @Override
     public String id() {
